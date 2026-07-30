@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1152172503744755622}
   - component: {fileID: 4011013980807518254}
   - component: {fileID: 7834389844445302522}
+  - component: {fileID: -8420614209564556027}
   m_Layer: 0
   m_Name: chocolate
   m_TagString: Untagged
@@ -59,6 +60,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -80,9 +86,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!64 &7834389844445302522
 MeshCollider:
@@ -106,3 +114,17 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 6678787658076682883, guid: 090177f1cfdaf224c94b6a0166b488ce, type: 3}
+--- !u!114 &-8420614209564556027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4355291191733541402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b6cd54c130fa584a9ebf96a5e232c02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Produs
+  numeProdus: Ciocolata
+  pret: 10.5

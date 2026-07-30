@@ -1,20 +1,21 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Noul Input System
+using UnityEngine.InputSystem;
+using TMPro; // Necesar pentru TextMeshPro
 using System.Collections.Generic;
 
 public class SpawnPeBanda : MonoBehaviour
 {
     [Header("Referințe Bandă & Oprire")]
     public Transform banda;
-    public Transform stopbanda; // Cubul unde se opresc produsele
+    public Transform stopbanda;
 
     [Header("Clienți (Customer)")]
-    public Transform punctPornireClient; // Unde apare clientul (ex: la începutul benzii)
-    public Transform punctOprireClient;  // Unde se oprește clientul la casă
-    public GameObject[] prefabsClienti;  // Cele 2 tipuri de cuburi/modele de client
+    public Transform punctPornireClient;
+    public Transform punctOprireClient;
+    public GameObject[] prefabsClienti;
 
     [Header("Produse (Assets)")]
-    public GameObject[] prefabsProduse;  // Cele 5 produse
+    public GameObject[] prefabsProduse;
     public int minProduse = 1;
     public int maxProduse = 4;
     public float spatiereProduse = 0.4f;
@@ -28,6 +29,10 @@ public class SpawnPeBanda : MonoBehaviour
     public float vitezaClient = 1.5f;
     public float distantaOprireProduse = 0.3f;
 
+    [Header("Ecran Casă & Scor")]
+    public TextMeshPro ecranText; // Drag & Drop textul de pe casa de marcat
+    private float scorTotal = 0f;
+
     // Stări interne
     private List<GameObject> produsePeBanda = new List<GameObject>();
     private GameObject clientCurent;
@@ -36,6 +41,7 @@ public class SpawnPeBanda : MonoBehaviour
 
     void Start()
     {
+        ActualizeazaEcran("Open", 0f);
         GenereazaClientNou();
     }
 
@@ -46,23 +52,18 @@ public class SpawnPeBanda : MonoBehaviour
         HandleScanareProduse();
     }
 
-    // 1. Generare Client Nou și Produse
     public void GenereazaClientNou()
     {
         if (prefabsClienti.Length == 0 || prefabsProduse.Length == 0) return;
 
-        // Curățăm produsele vechi
         CurataBanda();
 
-        // Spawnează un client aleatoriu din cele 2 tipuri
         int indexClient = Random.Range(0, prefabsClienti.Length);
         clientCurent = Instantiate(prefabsClienti[indexClient], punctPornireClient.position, punctPornireClient.rotation);
         clientLaCasa = false;
         produseOprite = false;
 
-        // Alege un număr aleatoriu de produse pentru acest client
         int numarProduse = Random.Range(minProduse, maxProduse + 1);
-
         float startOffset = -((numarProduse - 1) * spatiereProduse) / 2f;
 
         for (int i = 0; i < numarProduse; i++)
@@ -84,7 +85,6 @@ public class SpawnPeBanda : MonoBehaviour
         }
     }
 
-    // 2. Mișcare Client până la Punctul de Oprire
     void HandeMiscaClient()
     {
         if (clientCurent == null || punctOprireClient == null) return;
@@ -103,12 +103,10 @@ public class SpawnPeBanda : MonoBehaviour
         }
     }
 
-    // 3. Mișcare Produse pe Bandă
     void HandleMiscaProduse()
     {
         if (produsePeBanda.Count == 0 || produseOprite) return;
 
-        // Verificăm dacă primul produs a atins stopbanda
         if (stopbanda != null && produsePeBanda[0] != null)
         {
             float distanta = Vector3.Distance(produsePeBanda[0].transform.position, stopbanda.position);
@@ -119,7 +117,6 @@ public class SpawnPeBanda : MonoBehaviour
             }
         }
 
-        // Deplasare produse spre stânga
         foreach (GameObject prod in produsePeBanda)
         {
             if (prod != null)
@@ -129,37 +126,54 @@ public class SpawnPeBanda : MonoBehaviour
         }
     }
 
-    // 4. Scanare Produse pe tasta E
     void HandleScanareProduse()
     {
-        // Preluare apăsare tasta E în Input System
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
-            // Scanăm doar dacă produsele au ajuns la oprire
             if (produseOprite && produsePeBanda.Count > 0)
             {
-                // Eliminăm primul produs din listă (îl "scanăm")
                 GameObject produsScanat = produsePeBanda[0];
+
+                // Preluăm componenta Produs de pe obiectul scanat
+                Produs infoProdus = produsScanat.GetComponent<Produs>();
+
+                string nume = "Produs";
+                float pret = 1.0f;
+
+                if (infoProdus != null)
+                {
+                    nume = infoProdus.numeProdus;
+                    pret = infoProdus.pret;
+                }
+
+                // Adăugăm la scor
+                scorTotal += pret;
+
+                // Actualizăm afișajul de pe ecran
+                ActualizeazaEcran(nume, pret);
+
+                // Eliminăm produsul
                 produsePeBanda.RemoveAt(0);
                 Destroy(produsScanat);
 
-                Debug.Log("Produs scanat!");
-
-                // Dacă am scanat toate produsele clientului
                 if (produsePeBanda.Count == 0)
                 {
-                    Debug.Log("Client finalizat! Vine următorul...");
                     Destroy(clientCurent);
-
-                    // Așteaptă puțin și generează următorul client
-                    Invoke("GenereazaClientNou", 1.0f);
+                    Invoke("GenereazaClientNou", 1.5f);
                 }
                 else
                 {
-                    // Pornim banda din nou pentru a aduce următorul produs în față
                     produseOprite = false;
                 }
             }
+        }
+    }
+
+    void ActualizeazaEcran(string numeProdus, float pret)
+    {
+        if (ecranText != null)
+        {
+            ecranText.text = $"{numeProdus}\nPret: {pret:F2} LEI\n----------\nTotal: {scorTotal:F2} LEI";
         }
     }
 
