@@ -983,7 +983,7 @@ Transform:
   m_GameObject: {fileID: 777227190}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.28, y: 1.07, z: 0}
+  m_LocalPosition: {x: -3.49, y: 1.07, z: 3.99}
   m_LocalScale: {x: 0.9505, y: 2.8400939, z: 0.9505}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1035,7 +1035,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 3f1fc1de8ba25f64f9763ba79a25f402, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1180,6 +1180,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 839945499}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &936381516
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 936381517}
+  m_Layer: 0
+  m_Name: PunstStopClienty
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &936381517
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 936381516}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.12, y: 0.95, z: 0.63}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &993058598
 GameObject:
   m_ObjectHideFlags: 0
@@ -1441,6 +1472,37 @@ Transform:
   - {fileID: 100513664}
   m_Father: {fileID: 265107323}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1542577022
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1542577023}
+  m_Layer: 0
+  m_Name: PunctStartClient
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1542577023
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1542577022}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.74, y: 1.15, z: 0.54}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1671149069
 GameObject:
   m_ObjectHideFlags: 0
@@ -1579,7 +1641,7 @@ Transform:
   m_GameObject: {fileID: 1710320888}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.53, y: 1.15, z: -1.95}
+  m_LocalPosition: {x: 3.88, y: 1.15, z: -0.95}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1599,20 +1661,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpawnPeBanda
   banda: {fileID: 1671149070}
   stopbanda: {fileID: 726411066}
-  prefabsAssets:
-  - {fileID: 4771479405953594038, guid: abbf234617205844db11a1e767893e4f, type: 3}
-  - {fileID: 5731033002757011461, guid: f52b0a4b6b774914f9bc62d5eec653a5, type: 3}
-  - {fileID: 2129929732172800472, guid: f08a4f8cd29edd940a8f696ff2a3649f, type: 3}
-  - {fileID: 2750236993837222570, guid: 737c2fda69259de40b4fb5965b86a9e7, type: 3}
-  - {fileID: 2580249621097652999, guid: 2f120549ced5a7240a1b5f0bb5ce2254, type: 3}
-  numarObiecte: 3
-  spatiere: 0.4
-  scaraObiect: {x: 0.2, y: 0.2, z: 0.2}
-  inaltimeDeasupra: 0.2
-  rotatieAjustata: {x: 0, y: 0, z: 0}
-  seMisca: 1
+  punctPornireClient: {fileID: 1542577023}
+  punctOprireClient: {fileID: 936381517}
+  prefabsClienti:
+  - {fileID: 2115928095}
+  - {fileID: 777227190}
+  prefabsProduse:
+  - {fileID: 4103672370777542020, guid: 465053c7e3a8f0b4e9fd2a994ff5c208, type: 3}
+  - {fileID: 3741629357895028283, guid: b6d32a74e9000654f911b575dc121e87, type: 3}
+  - {fileID: 4355291191733541402, guid: 9aaf52fce2e472c428b3649bcc1d719a, type: 3}
+  - {fileID: 7253298302694123796, guid: a857ec3e6ef922843bfea771a94540ba, type: 3}
+  - {fileID: 4008468578534030988, guid: dee06e22df2c81248a24f2cca32d1dc3, type: 3}
+  minProduse: 1
+  maxProduse: 4
+  spatiereProduse: 0.4
+  scaraProdus: {x: 1, y: 1, z: 1}
+  inaltimeDeasupraBanda: 0.35
   vitezaBanda: 0.8
-  distantaOprire: 0.3
+  vitezaClient: 1.5
+  distantaOprireProduse: 0.3
 --- !u!1 &1870883088
 GameObject:
   m_ObjectHideFlags: 0
@@ -1770,7 +1837,7 @@ Transform:
   m_GameObject: {fileID: 2115928095}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.186, y: 1.07, z: 0}
+  m_LocalPosition: {x: 3.93, y: 1.07, z: 4.16}
   m_LocalScale: {x: 0.9505, y: 2.8400939, z: 0.9505}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1822,7 +1889,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 8f54eb1208aad91458fff43d512f1d2e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1975,3 +2042,5 @@ SceneRoots:
   - {fileID: 265107323}
   - {fileID: 30642402}
   - {fileID: 1710320889}
+  - {fileID: 1542577023}
+  - {fileID: 936381517}
