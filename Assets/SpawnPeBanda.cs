@@ -9,10 +9,12 @@ public class SpawnPeBanda : MonoBehaviour
     public Transform banda;
     public Transform stopbanda;
 
-    [Header("Clienți (Customer)")]
+    [Header("Clienți (Coadă)")]
     public Transform punctPornireClient;
     public Transform punctOprireClient;
     public GameObject[] prefabsClienti; // 0 = Normal, 1 = Karen
+    public int marimeCoada = 3;         
+    public float distantaIntreClienti = 1.5f; 
 
     [Header("Audio (Muzică & SFX)")]
     public AudioSource audioSourceMuzica;
@@ -20,7 +22,7 @@ public class SpawnPeBanda : MonoBehaviour
     public AudioClip muzicaNormal;
     public AudioClip muzicaKaren;
     public AudioClip sunetBeepScanare;
-    public AudioClip sunetGlitchCaptcha; // Sunetul de eroare/glitch pentru CAPTCHA
+    public AudioClip sunetGlitchCaptcha; 
 
     [Header("Produse (Assets)")]
     public GameObject[] prefabsProduse;
@@ -34,14 +36,14 @@ public class SpawnPeBanda : MonoBehaviour
 
     [Header("Setări Mișcare")]
     public float vitezaBanda = 0.8f;
-    public float vitezaClient = 1.5f;
+    public float vitezaClient = 2.0f;
     public float distantaOprireProduse = 0.3f;
 
     [Header("Ecrane Text")]
     public TextMeshPro ecranText;               // Ecranul 3D de pe casa de marcat
     public TextMeshProUGUI textReplicaKarenUI;  // HUD UI pe ecranul jucătorului
 
-    [Header("Setări Karen")]
+    [Header("Setări Karen / Limită Timp")]
     public float timpMaximKaren = 25.0f;
     private float timpRamasKaren;
 
@@ -61,15 +63,18 @@ public class SpawnPeBanda : MonoBehaviour
     private bool captchaActiv = false;
     private int tastaTintaCaptcha = 1;
 
+    // Sistem Coadă Clienți
+    private List<GameObject> coadaClienti = new List<GameObject>();
+    private List<int> tipuriClientiCoada = new List<int>(); // 0 = Normal, 1 = Karen
+
     // Stări interne
     private List<GameObject> produsePeBanda = new List<GameObject>();
-    private GameObject clientCurent;
     private bool clientLaCasa = false;
     private bool produseOprite = false;
 
     private string[] repliciKaren = new string[]
     {
-        "\"Mi se grăbește copilul!\"",
+        "\"Mi se plictiseste copilul!\"",
         "\"Vreau să vorbesc cu managerul!\"",
         "\"De ce durează atât?!\"",
         "\"Sunt client fidel, grăbește-te!\""
@@ -78,14 +83,32 @@ public class SpawnPeBanda : MonoBehaviour
 
     void Start()
     {
-        GenereazaClientNou();
+        
+        StartCoroutine(PopuleazaCoadaCuDelay());
+    }
+    
+    System.Collections.IEnumerator PopuleazaCoadaCuDelay()
+    {
+        for (int i = 0; i < marimeCoada; i++)
+        {
+            AdaugaClientInCoada();
+
+            // Dacă e primul client, începem jocul cu el imediat
+            if (i == 0)
+            {
+                GenereazaClientNou();
+            }
+
+            
+            yield return new WaitForSeconds(2.0f);
+        }
     }
 
     void Update()
     {
         if (gameOver) return;
 
-        HandeMiscaClient();
+        ActualizeazaPozitiiCoada();
 
         if (captchaActiv)
         {
@@ -95,7 +118,7 @@ public class SpawnPeBanda : MonoBehaviour
 
         HandleMiscaProduse();
 
-        if (esteKaren && clientLaCasa)
+        if (clientLaCasa)
         {
             timpRamasKaren -= Time.deltaTime;
 
@@ -106,7 +129,10 @@ public class SpawnPeBanda : MonoBehaviour
                 return;
             }
 
-            ActualizeazaUIKarenScreen();
+            if (esteKaren)
+            {
+                ActualizeazaUIKarenScreen();
+            }
         }
 
         if (fazaScanare)
@@ -116,6 +142,57 @@ public class SpawnPeBanda : MonoBehaviour
         else if (fazaRest)
         {
             HandlePredareRest();
+        }
+    }
+
+    void PopuleazaCoadaInitiala()
+    {
+        for (int i = 0; i < marimeCoada; i++)
+        {
+            AdaugaClientInCoada();
+        }
+    }
+
+    void AdaugaClientInCoada()
+    {
+        int indexClient = Random.Range(0, prefabsClienti.Length);
+
+       
+        GameObject nouClient = Instantiate(prefabsClienti[indexClient], punctPornireClient.position, punctPornireClient.rotation);
+
+        coadaClienti.Add(nouClient);
+        tipuriClientiCoada.Add(indexClient);
+    }
+    void ActualizeazaPozitiiCoada()
+    {
+        
+        Vector3 directieMers = (punctOprireClient.position - punctPornireClient.position).normalized;
+
+        for (int i = 0; i < coadaClienti.Count; i++)
+        {
+            if (coadaClienti[i] == null) continue;
+
+           
+            Vector3 pozitieTinta = punctOprireClient.position - (directieMers * i * distantaIntreClienti);
+
+            coadaClienti[i].transform.position = Vector3.MoveTowards(
+                coadaClienti[i].transform.position,
+                pozitieTinta,
+                vitezaClient * Time.deltaTime
+            );
+
+           
+            if (directieMers != Vector3.zero)
+            {
+                Quaternion rotatieTinta = Quaternion.LookRotation(directieMers);
+                coadaClienti[i].transform.rotation = Quaternion.Slerp(coadaClienti[i].transform.rotation, rotatieTinta, Time.deltaTime * 5f);
+            }
+
+           
+            if (i == 0 && Vector3.Distance(coadaClienti[0].transform.position, punctOprireClient.position) < 0.1f)
+            {
+                clientLaCasa = true;
+            }
         }
     }
 
@@ -130,13 +207,12 @@ public class SpawnPeBanda : MonoBehaviour
         fazaScanare = true;
         fazaRest = false;
         captchaActiv = false;
+        produseOprite = false;
+        clientLaCasa = false;
+
         timpRamasKaren = timpMaximKaren;
 
-        int indexClient = Random.Range(0, prefabsClienti.Length);
-        clientCurent = Instantiate(prefabsClienti[indexClient], punctPornireClient.position, punctPornireClient.rotation);
-        clientLaCasa = false;
-        produseOprite = false;
-
+        int indexClient = tipuriClientiCoada[0];
         esteKaren = (indexClient == 1);
 
         if (esteKaren)
@@ -179,31 +255,23 @@ public class SpawnPeBanda : MonoBehaviour
     {
         if (audioSourceMuzica == null) return;
 
+        // Alegem melodia în funcție de client (Index 1 = Karen)
         AudioClip muzicaDeRedat = (indexClient == 1) ? muzicaKaren : muzicaNormal;
 
+        
         if (audioSourceMuzica.clip != muzicaDeRedat)
         {
             audioSourceMuzica.clip = muzicaDeRedat;
             audioSourceMuzica.loop = true;
             audioSourceMuzica.Play();
         }
-    }
-
-    void HandeMiscaClient()
-    {
-        if (clientCurent == null || punctOprireClient == null) return;
-
-        if (Vector3.Distance(clientCurent.transform.position, punctOprireClient.position) > 0.1f)
-        {
-            clientCurent.transform.position = Vector3.MoveTowards(
-                clientCurent.transform.position,
-                punctOprireClient.position,
-                vitezaClient * Time.deltaTime
-            );
-        }
         else
         {
-            clientLaCasa = true;
+            
+            if (!audioSourceMuzica.isPlaying)
+            {
+                audioSourceMuzica.Play();
+            }
         }
     }
 
@@ -261,7 +329,6 @@ public class SpawnPeBanda : MonoBehaviour
                 produsePeBanda.RemoveAt(0);
                 Destroy(produsScanat);
 
-                // Şansă de 40% să apară un CAPTCHA dacă mai sunt produse
                 if (produsePeBanda.Count > 0 && Random.value < 0.4f)
                 {
                     DeclanseazaCaptcha();
@@ -281,7 +348,6 @@ public class SpawnPeBanda : MonoBehaviour
         }
     }
 
-    // --- LOGICĂ CAPTCHA & SUNET GLITCH ---
     void DeclanseazaCaptcha()
     {
         captchaActiv = true;
@@ -369,8 +435,18 @@ public class SpawnPeBanda : MonoBehaviour
                     textReplicaKarenUI.gameObject.SetActive(false);
                 }
 
+                // Eliminăm clientul rezolvat din coadă
+                if (coadaClienti.Count > 0)
+                {
+                    Destroy(coadaClienti[0]);
+                    coadaClienti.RemoveAt(0);
+                    tipuriClientiCoada.RemoveAt(0);
+                }
+
+                // Adăugăm alt client la capătul cozii
+                AdaugaClientInCoada();
+
                 fazaRest = false;
-                Destroy(clientCurent);
                 Invoke("GenereazaClientNou", 0.5f);
             }
             else if (restOferitDeJucator < restNecesar)
@@ -387,6 +463,10 @@ public class SpawnPeBanda : MonoBehaviour
             {
                 gameOver = true;
                 fazaRest = false;
+                if (textReplicaKarenUI != null)
+                {
+                    textReplicaKarenUI.gameObject.SetActive(false);
+                }
                 ActualizeazaEcran($"REST GRESIT!\nAi fost concediat :((");
             }
         }
@@ -400,7 +480,7 @@ public class SpawnPeBanda : MonoBehaviour
 
         if (textReplicaKarenUI != null) textReplicaKarenUI.gameObject.SetActive(false);
 
-        ActualizeazaEcran($"<color=#FF3333>KAREN S-A ENERVAT!</color>\n\"A durat prea mult!\"\n\n<b>GAME OVER!</b>\nSCOR FINAL: {scorTotalJoc:F2} LEI");
+        ActualizeazaEcran($"<color=#FF3333>TIMP EXPIRAT!</color>\nClientul s-a enervat și a plecat!\n\n<b>GAME OVER!</b>\nSCOR FINAL: {scorTotalJoc:F2} LEI");
     }
 
     void ActualizeazaUIKarenScreen()
@@ -414,7 +494,7 @@ public class SpawnPeBanda : MonoBehaviour
 
     void AfiseazaStareRest()
     {
-        ActualizeazaEcran($"TOTAL CLIENT: {totalClientCurent} LEI\nPRIMII: {baniPrimitiDeLaClient} LEI\nREST DE DAT: {restNecesar} LEI\n----------\nREST ALES: {restOferitDeJucator} LEI\n(Apasa Q pt confirmare)");
+        ActualizeazaEcran($"TOTAL CLIENT: {totalClientCurent} LEI\nPRIMII: {baniPrimitiDeLaClient} LEI\nREST DE DAT: {restNecesar} LEI\n----------\nREST ALES: {restOferitDeJucator} LEI\n");
     }
 
     void ActualizeazaEcran(string text)
@@ -432,6 +512,5 @@ public class SpawnPeBanda : MonoBehaviour
             if (prod != null) Destroy(prod);
         }
         produsePeBanda.Clear();
-        if (clientCurent != null) Destroy(clientCurent);
     }
 }

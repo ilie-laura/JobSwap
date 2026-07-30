@@ -2924,6 +2924,8 @@ MonoBehaviour:
   prefabsClienti:
   - {fileID: 777227190}
   - {fileID: 2115928095}
+  marimeCoada: 3
+  distantaIntreClienti: 1.7
   audioSourceMuzica: {fileID: 1710320892}
   audioSourceSFX: {fileID: 1710320892}
   muzicaNormal: {fileID: 8300000, guid: 4bb1019136edead4d847fcbb3aa2c767, type: 3}
@@ -2940,13 +2942,13 @@ MonoBehaviour:
   maxProduse: 4
   spatiereProduse: 0.4
   scaraProdus: {x: 0.6, y: 0.6, z: 0.6}
-  inaltimeDeasupraBanda: 0.35
+  inaltimeDeasupraBanda: 0.2
   vitezaBanda: 0.8
   vitezaClient: 1.5
   distantaOprireProduse: 0.3
   ecranText: {fileID: 1239709596}
   textReplicaKarenUI: {fileID: 1775280495}
-  timpMaximKaren: 25
+  timpMaximKaren: 15
 --- !u!82 &1710320891
 AudioSource:
   m_ObjectHideFlags: 0
