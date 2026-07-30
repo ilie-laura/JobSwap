@@ -107,7 +107,11 @@ public class SpawnPeBanda : MonoBehaviour
     void Update()
     {
         if (gameOver) return;
-
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            IesiDinJoc();
+            return;
+        }
         ActualizeazaPozitiiCoada();
 
         if (captchaActiv)
@@ -162,6 +166,18 @@ public class SpawnPeBanda : MonoBehaviour
 
         coadaClienti.Add(nouClient);
         tipuriClientiCoada.Add(indexClient);
+    }
+    public void IesiDinJoc()
+    {
+        Debug.Log("Jocul se închide...");
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    // Dacă jocul rulează în browser (WebGL pe itch.io), dăm refresh la pagină
+    Application.ExternalEval("location.reload();");
+#else
+        // Dacă jocul rulează ca aplicație executabilă (.exe)
+        Application.Quit();
+#endif
     }
     void ActualizeazaPozitiiCoada()
     {
