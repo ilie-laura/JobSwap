@@ -12,11 +12,19 @@ public class SpawnPeBanda : MonoBehaviour
     [Header("Clienți (Customer)")]
     public Transform punctPornireClient;
     public Transform punctOprireClient;
-    public GameObject[] prefabsClienti;
+    public GameObject[] prefabsClienti; // 0 = Normal, 1 = Karen
+
+    [Header("Audio (Muzică & SFX)")]
+    public AudioSource audioSourceMuzica;
+    public AudioSource audioSourceSFX;
+    public AudioClip muzicaNormal;
+    public AudioClip muzicaKaren;
+    public AudioClip sunetBeepScanare;
+    public AudioClip sunetGlitchCaptcha; // Sunetul de eroare/glitch pentru CAPTCHA
 
     [Header("Produse (Assets)")]
     public GameObject[] prefabsProduse;
-    public int minProduse = 1;
+    public int minProduse = 2;
     public int maxProduse = 4;
     public float spatiereProduse = 0.4f;
 
@@ -29,25 +37,44 @@ public class SpawnPeBanda : MonoBehaviour
     public float vitezaClient = 1.5f;
     public float distantaOprireProduse = 0.3f;
 
-    [Header("Ecran Casă")]
-    public TextMeshPro ecranText;
+    [Header("Ecrane Text")]
+    public TextMeshPro ecranText;               // Ecranul 3D de pe casa de marcat
+    public TextMeshProUGUI textReplicaKarenUI;  // HUD UI pe ecranul jucătorului
 
-    // Stări Joc & Bani
+    [Header("Setări Karen")]
+    public float timpMaximKaren = 25.0f;
+    private float timpRamasKaren;
+
+    // Stări Joc & Karen Timer
     private float totalClientCurent = 0f;
     private float baniPrimitiDeLaClient = 0f;
     private float restNecesar = 0f;
     private float restOferitDeJucator = 0f;
 
-    private float scorTotalJoc = 0f; // Adună doar clienții serviți corect
+    private float scorTotalJoc = 0f;
     private bool fazaScanare = true;
     private bool fazaRest = false;
     private bool gameOver = false;
+    private bool esteKaren = false;
+
+    // Stări CAPTCHA (Non-Uman)
+    private bool captchaActiv = false;
+    private int tastaTintaCaptcha = 1;
 
     // Stări interne
     private List<GameObject> produsePeBanda = new List<GameObject>();
     private GameObject clientCurent;
     private bool clientLaCasa = false;
     private bool produseOprite = false;
+
+    private string[] repliciKaren = new string[]
+    {
+        "\"Mi se grăbește copilul!\"",
+        "\"Vreau să vorbesc cu managerul!\"",
+        "\"De ce durează atât?!\"",
+        "\"Sunt client fidel, grăbește-te!\""
+    };
+    private string replicaCurentaKaren = "";
 
     void Start()
     {
@@ -59,7 +86,28 @@ public class SpawnPeBanda : MonoBehaviour
         if (gameOver) return;
 
         HandeMiscaClient();
+
+        if (captchaActiv)
+        {
+            HandleCaptchaInput();
+            return;
+        }
+
         HandleMiscaProduse();
+
+        if (esteKaren && clientLaCasa)
+        {
+            timpRamasKaren -= Time.deltaTime;
+
+            if (timpRamasKaren <= 0f)
+            {
+                timpRamasKaren = 0f;
+                KarenTimeOut();
+                return;
+            }
+
+            ActualizeazaUIKarenScreen();
+        }
 
         if (fazaScanare)
         {
@@ -75,18 +123,33 @@ public class SpawnPeBanda : MonoBehaviour
     {
         CurataBanda();
 
-        // Resetare valori per client
         totalClientCurent = 0f;
         baniPrimitiDeLaClient = 0f;
         restNecesar = 0f;
         restOferitDeJucator = 0f;
         fazaScanare = true;
         fazaRest = false;
+        captchaActiv = false;
+        timpRamasKaren = timpMaximKaren;
 
         int indexClient = Random.Range(0, prefabsClienti.Length);
         clientCurent = Instantiate(prefabsClienti[indexClient], punctPornireClient.position, punctPornireClient.rotation);
         clientLaCasa = false;
         produseOprite = false;
+
+        esteKaren = (indexClient == 1);
+
+        if (esteKaren)
+        {
+            replicaCurentaKaren = repliciKaren[Random.Range(0, repliciKaren.Length)];
+        }
+        else
+        {
+            if (textReplicaKarenUI != null)
+                textReplicaKarenUI.gameObject.SetActive(false);
+        }
+
+        SchimbaMuzicaClient(indexClient);
 
         int numarProduse = Random.Range(minProduse, maxProduse + 1);
         float startOffset = -((numarProduse - 1) * spatiereProduse) / 2f;
@@ -110,6 +173,20 @@ public class SpawnPeBanda : MonoBehaviour
         }
 
         ActualizeazaEcran("Porneste scanarea\nApasa E!");
+    }
+
+    void SchimbaMuzicaClient(int indexClient)
+    {
+        if (audioSourceMuzica == null) return;
+
+        AudioClip muzicaDeRedat = (indexClient == 1) ? muzicaKaren : muzicaNormal;
+
+        if (audioSourceMuzica.clip != muzicaDeRedat)
+        {
+            audioSourceMuzica.clip = muzicaDeRedat;
+            audioSourceMuzica.loop = true;
+            audioSourceMuzica.Play();
+        }
     }
 
     void HandeMiscaClient()
@@ -152,17 +229,17 @@ public class SpawnPeBanda : MonoBehaviour
             }
         }
     }
+
     void HandleScanareProduse()
     {
-        // Scanăm doar dacă SUNTEM în faza de scanare și NE UITĂM la bandă (sau apăsăm E scurt)
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
-            if (produseOprite && produsePeBanda.Count > 0 && fazaScanare)
+            if (produseOprite && produsePeBanda.Count > 0)
             {
                 GameObject produsScanat = produsePeBanda[0];
                 Produs infoProdus = produsScanat.GetComponent<Produs>();
 
-                string nume = "Produs";
+                string nume = "Produs Organism";
                 float pret = 1.0f;
 
                 if (infoProdus != null)
@@ -172,8 +249,24 @@ public class SpawnPeBanda : MonoBehaviour
                 }
 
                 totalClientCurent += pret;
+
+                if (!esteKaren && audioSourceSFX != null && sunetBeepScanare != null)
+                {
+                    CancelInvoke("OpresteBeep");
+                    audioSourceSFX.clip = sunetBeepScanare;
+                    audioSourceSFX.Play();
+                    Invoke("OpresteBeep", 0.50f);
+                }
+
                 produsePeBanda.RemoveAt(0);
                 Destroy(produsScanat);
+
+                // Şansă de 40% să apară un CAPTCHA dacă mai sunt produse
+                if (produsePeBanda.Count > 0 && Random.value < 0.4f)
+                {
+                    DeclanseazaCaptcha();
+                    return;
+                }
 
                 if (produsePeBanda.Count == 0)
                 {
@@ -188,12 +281,62 @@ public class SpawnPeBanda : MonoBehaviour
         }
     }
 
+    // --- LOGICĂ CAPTCHA & SUNET GLITCH ---
+    void DeclanseazaCaptcha()
+    {
+        captchaActiv = true;
+        tastaTintaCaptcha = Random.Range(1, 4);
+
+        if (audioSourceSFX != null && sunetGlitchCaptcha != null)
+        {
+            CancelInvoke("OpresteGlitch");
+            audioSourceSFX.clip = sunetGlitchCaptcha;
+            audioSourceSFX.Play();
+            Invoke("OpresteGlitch", 1.5f);
+        }
+
+        ActualizeazaEcran($"<color=#FF3333><b>[ VERIFICARE CAPTCHA ]</b></color>\nConfirmă că ești UMAN!\n\n<b>Apasa tasta [ {tastaTintaCaptcha} ]</b>");
+    }
+
+    void OpresteGlitch()
+    {
+        if (audioSourceSFX != null && audioSourceSFX.isPlaying)
+        {
+            audioSourceSFX.Stop();
+        }
+    }
+
+    void HandleCaptchaInput()
+    {
+        if (Keyboard.current == null) return;
+
+        bool tastaCorecta = false;
+
+        if (tastaTintaCaptcha == 1 && Keyboard.current.digit1Key.wasPressedThisFrame) tastaCorecta = true;
+        if (tastaTintaCaptcha == 2 && Keyboard.current.digit2Key.wasPressedThisFrame) tastaCorecta = true;
+        if (tastaTintaCaptcha == 3 && Keyboard.current.digit3Key.wasPressedThisFrame) tastaCorecta = true;
+
+        if (tastaCorecta)
+        {
+            captchaActiv = false;
+            ActualizeazaEcran("<color=#33FF33><b>HUMAN VERIFIED!</b></color>\nContinuă scanarea...");
+            produseOprite = false;
+        }
+    }
+
+    void OpresteBeep()
+    {
+        if (audioSourceSFX != null && audioSourceSFX.isPlaying)
+        {
+            audioSourceSFX.Stop();
+        }
+    }
+
     void IncepeFazaRest()
     {
         fazaScanare = false;
         fazaRest = true;
 
-        // Clientul dă o bancnotă mai mare decât totalul (rotunjit la 5 sau 10 lei în sus)
         if (totalClientCurent <= 5f) baniPrimitiDeLaClient = 5f;
         else if (totalClientCurent <= 10f) baniPrimitiDeLaClient = 10f;
         else if (totalClientCurent <= 20f) baniPrimitiDeLaClient = 20f;
@@ -204,7 +347,6 @@ public class SpawnPeBanda : MonoBehaviour
         AfiseazaStareRest();
     }
 
-    // Apeleat din scriptul Bancnota.cs când apeși click pe o bancnotă
     public void AdaugaRest(float valoare)
     {
         if (!fazaRest || gameOver) return;
@@ -215,26 +357,58 @@ public class SpawnPeBanda : MonoBehaviour
 
     void HandlePredareRest()
     {
-        // Apasă Q pentru a confirma restul dat
         if (Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame)
         {
             if (Mathf.Approximately(restOferitDeJucator, restNecesar) || Mathf.Abs(restOferitDeJucator - restNecesar) < 0.01f)
             {
-                // REST CORECT!
-                scorTotalJoc += totalClientCurent; // Adăugăm la scorul jocului
-                ActualizeazaEcran("<color=green>REST CORECT!</color>\nVine alt client...");
+                scorTotalJoc += totalClientCurent;
+                ActualizeazaEcran("<color=#33FF33>REST CORECT!</color>\nVine alt client...");
+
+                if (textReplicaKarenUI != null)
+                {
+                    textReplicaKarenUI.gameObject.SetActive(false);
+                }
 
                 fazaRest = false;
                 Destroy(clientCurent);
-                Invoke("GenereazaClientNou", 2.0f);
+                Invoke("GenereazaClientNou", 0.5f);
+            }
+            else if (restOferitDeJucator < restNecesar)
+            {
+                gameOver = true;
+                fazaRest = false;
+                if (textReplicaKarenUI != null)
+                {
+                    textReplicaKarenUI.gameObject.SetActive(false);
+                }
+                ActualizeazaEcran($"<color=#FF3333>REST GRESIT!</color>\nClientul a primit {restOferitDeJucator} LEI\nTrebuia: {restNecesar} LEI\n\n<b>GAME OVER!</b>\nSCOR FINAL: {scorTotalJoc:F2} LEI");
             }
             else
             {
-                // REST GREȘIT -> GAME OVER
                 gameOver = true;
                 fazaRest = false;
-                ActualizeazaEcran($"<color=red>REST GRESIT!</color>\nClientul a primit {restOferitDeJucator} LEI\nTrebuia: {restNecesar} LEI\n\n<b>GAME OVER!</b>\nSCOR FINAL: {scorTotalJoc:F2} LEI");
+                ActualizeazaEcran($"REST GRESIT!\nAi fost concediat :((");
             }
+        }
+    }
+
+    void KarenTimeOut()
+    {
+        gameOver = true;
+        fazaScanare = false;
+        fazaRest = false;
+
+        if (textReplicaKarenUI != null) textReplicaKarenUI.gameObject.SetActive(false);
+
+        ActualizeazaEcran($"<color=#FF3333>KAREN S-A ENERVAT!</color>\n\"A durat prea mult!\"\n\n<b>GAME OVER!</b>\nSCOR FINAL: {scorTotalJoc:F2} LEI");
+    }
+
+    void ActualizeazaUIKarenScreen()
+    {
+        if (textReplicaKarenUI != null)
+        {
+            textReplicaKarenUI.gameObject.SetActive(true);
+            textReplicaKarenUI.text = $"<color=#FF3333><b>KAREN:</b></color> {replicaCurentaKaren}\n<color=#FFFF33><b>TIMP RAMAS:</b> {timpRamasKaren:F1}s</color>";
         }
     }
 
