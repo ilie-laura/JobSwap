@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using TMPro; // Necesar pentru TextMeshPro
+using TMPro;
 using System.Collections.Generic;
 
 public class SpawnPeBanda : MonoBehaviour
@@ -29,9 +29,19 @@ public class SpawnPeBanda : MonoBehaviour
     public float vitezaClient = 1.5f;
     public float distantaOprireProduse = 0.3f;
 
-    [Header("Ecran Casă & Scor")]
-    public TextMeshPro ecranText; // Drag & Drop textul de pe casa de marcat
-    private float scorTotal = 0f;
+    [Header("Ecran Casă")]
+    public TextMeshPro ecranText;
+
+    // Stări Joc & Bani
+    private float totalClientCurent = 0f;
+    private float baniPrimitiDeLaClient = 0f;
+    private float restNecesar = 0f;
+    private float restOferitDeJucator = 0f;
+
+    private float scorTotalJoc = 0f; // Adună doar clienții serviți corect
+    private bool fazaScanare = true;
+    private bool fazaRest = false;
+    private bool gameOver = false;
 
     // Stări interne
     private List<GameObject> produsePeBanda = new List<GameObject>();
@@ -41,22 +51,37 @@ public class SpawnPeBanda : MonoBehaviour
 
     void Start()
     {
-        ActualizeazaEcran("Open", 0f);
         GenereazaClientNou();
     }
 
     void Update()
     {
+        if (gameOver) return;
+
         HandeMiscaClient();
         HandleMiscaProduse();
-        HandleScanareProduse();
+
+        if (fazaScanare)
+        {
+            HandleScanareProduse();
+        }
+        else if (fazaRest)
+        {
+            HandlePredareRest();
+        }
     }
 
     public void GenereazaClientNou()
     {
-        if (prefabsClienti.Length == 0 || prefabsProduse.Length == 0) return;
-
         CurataBanda();
+
+        // Resetare valori per client
+        totalClientCurent = 0f;
+        baniPrimitiDeLaClient = 0f;
+        restNecesar = 0f;
+        restOferitDeJucator = 0f;
+        fazaScanare = true;
+        fazaRest = false;
 
         int indexClient = Random.Range(0, prefabsClienti.Length);
         clientCurent = Instantiate(prefabsClienti[indexClient], punctPornireClient.position, punctPornireClient.rotation);
@@ -83,6 +108,8 @@ public class SpawnPeBanda : MonoBehaviour
 
             produsePeBanda.Add(produsCreat);
         }
+
+        ActualizeazaEcran("Porneste scanarea\nApasa E!");
     }
 
     void HandeMiscaClient()
@@ -125,16 +152,14 @@ public class SpawnPeBanda : MonoBehaviour
             }
         }
     }
-
     void HandleScanareProduse()
     {
+        // Scanăm doar dacă SUNTEM în faza de scanare și NE UITĂM la bandă (sau apăsăm E scurt)
         if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
         {
-            if (produseOprite && produsePeBanda.Count > 0)
+            if (produseOprite && produsePeBanda.Count > 0 && fazaScanare)
             {
                 GameObject produsScanat = produsePeBanda[0];
-
-                // Preluăm componenta Produs de pe obiectul scanat
                 Produs infoProdus = produsScanat.GetComponent<Produs>();
 
                 string nume = "Produs";
@@ -146,34 +171,83 @@ public class SpawnPeBanda : MonoBehaviour
                     pret = infoProdus.pret;
                 }
 
-                // Adăugăm la scor
-                scorTotal += pret;
-
-                // Actualizăm afișajul de pe ecran
-                ActualizeazaEcran(nume, pret);
-
-                // Eliminăm produsul
+                totalClientCurent += pret;
                 produsePeBanda.RemoveAt(0);
                 Destroy(produsScanat);
 
                 if (produsePeBanda.Count == 0)
                 {
-                    Destroy(clientCurent);
-                    Invoke("GenereazaClientNou", 1.5f);
+                    IncepeFazaRest();
                 }
                 else
                 {
+                    ActualizeazaEcran($"{nume}: {pret} LEI\nTOTAL: {totalClientCurent} LEI");
                     produseOprite = false;
                 }
             }
         }
     }
 
-    void ActualizeazaEcran(string numeProdus, float pret)
+    void IncepeFazaRest()
+    {
+        fazaScanare = false;
+        fazaRest = true;
+
+        // Clientul dă o bancnotă mai mare decât totalul (rotunjit la 5 sau 10 lei în sus)
+        if (totalClientCurent <= 5f) baniPrimitiDeLaClient = 5f;
+        else if (totalClientCurent <= 10f) baniPrimitiDeLaClient = 10f;
+        else if (totalClientCurent <= 20f) baniPrimitiDeLaClient = 20f;
+        else baniPrimitiDeLaClient = Mathf.Ceil(totalClientCurent / 10f) * 10f + 10f;
+
+        restNecesar = baniPrimitiDeLaClient - totalClientCurent;
+
+        AfiseazaStareRest();
+    }
+
+    // Apeleat din scriptul Bancnota.cs când apeși click pe o bancnotă
+    public void AdaugaRest(float valoare)
+    {
+        if (!fazaRest || gameOver) return;
+
+        restOferitDeJucator += valoare;
+        AfiseazaStareRest();
+    }
+
+    void HandlePredareRest()
+    {
+        // Apasă Q pentru a confirma restul dat
+        if (Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame)
+        {
+            if (Mathf.Approximately(restOferitDeJucator, restNecesar) || Mathf.Abs(restOferitDeJucator - restNecesar) < 0.01f)
+            {
+                // REST CORECT!
+                scorTotalJoc += totalClientCurent; // Adăugăm la scorul jocului
+                ActualizeazaEcran("<color=green>REST CORECT!</color>\nVine alt client...");
+
+                fazaRest = false;
+                Destroy(clientCurent);
+                Invoke("GenereazaClientNou", 2.0f);
+            }
+            else
+            {
+                // REST GREȘIT -> GAME OVER
+                gameOver = true;
+                fazaRest = false;
+                ActualizeazaEcran($"<color=red>REST GRESIT!</color>\nClientul a primit {restOferitDeJucator} LEI\nTrebuia: {restNecesar} LEI\n\n<b>GAME OVER!</b>\nSCOR FINAL: {scorTotalJoc:F2} LEI");
+            }
+        }
+    }
+
+    void AfiseazaStareRest()
+    {
+        ActualizeazaEcran($"TOTAL CLIENT: {totalClientCurent} LEI\nPRIMII: {baniPrimitiDeLaClient} LEI\nREST DE DAT: {restNecesar} LEI\n----------\nREST ALES: {restOferitDeJucator} LEI\n(Apasa Q pt confirmare)");
+    }
+
+    void ActualizeazaEcran(string text)
     {
         if (ecranText != null)
         {
-            ecranText.text = $"{numeProdus}\nPret: {pret:F2} LEI\n----------\nTotal: {scorTotal:F2} LEI";
+            ecranText.text = text;
         }
     }
 
